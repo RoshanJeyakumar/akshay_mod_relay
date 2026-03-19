@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RelayOS — The Smart Cold Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0c0905;
+    --deep: #130f07;
+    --surface: #1c1609;
+    --border: #2e2214;
+    --green: #00e676;
+    --green-dim: #00c853;
+    --green-glow: rgba(0, 230, 118, 0.12);
+    --green-faint: rgba(0, 230, 118, 0.04);
+    --btn-green: #b8ddb0;
+    --btn-green-hover: #d2ecca;
+    --white: #f5ede0;
+    --muted: #7a6a54;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'Outfit', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--body);
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.15s ease;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid var(--green);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.25s ease;
+    opacity: 0.5;
+    mix-blend-mode: screen;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9000;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 8999;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 3rem;
+    border-bottom: 1px solid rgba(0,230,118,0.08);
+    backdrop-filter: blur(20px);
+    background: rgba(5,5,5,0.8);
+  }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    color: var(--white);
+  }
+  .nav-logo span { color: var(--green); }
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: #1c1609;
+    background: var(--btn-green);
+    padding: 0.55rem 1.4rem;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+    text-transform: uppercase;
+  }
+  .nav-cta:hover { background: var(--btn-green-hover); transform: translateY(-1px); }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5rem 3rem 5rem 3rem;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .hero-tag::before {
+    content: '';
+    display: block;
+    width: 2rem;
+    height: 1px;
+    background: var(--green);
+  }
+  .hero-h1 {
+    font-family: var(--display);
+    font-size: clamp(4rem, 7vw, 7.5rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .hero-h1 .accent { color: var(--green); }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 460px;
+    margin: 1.5rem 0 2.5rem;
+    font-weight: 300;
+  }
+  .hero-btns {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1c1609;
+    background: var(--btn-green);
+    padding: 1rem 2rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+    border: 1px solid var(--btn-green);
+  }
+  .btn-primary:hover { background: var(--btn-green-hover); border-color: var(--btn-green-hover); }
+  .btn-ghost {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .btn-ghost:hover { color: var(--btn-green); border-color: var(--btn-green); }
+
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+  .stat-item .num {
+    font-family: var(--display);
+    font-size: 2.2rem;
+    color: var(--green);
+    display: block;
+    letter-spacing: 0.04em;
+  }
+  .stat-item .label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-right {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-right img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+    filter: saturate(0.6) contrast(1.1);
+  }
+  .hero-right::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, var(--black) 0%, transparent 40%);
+    z-index: 1;
+  }
+  .hero-right::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--black) 0%, transparent 40%);
+    z-index: 1;
+  }
+
+  /* TICKER */
+  .ticker-bar {
+    background: #243322;
+    padding: 0.65rem 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+  }
+  .ticker-inner span {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--btn-green);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin: 0 2.5rem;
+  }
+  .ticker-inner span::before { content: '▸ '; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* SECTIONS COMMON */
+  section { padding: 6rem 3rem; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.25em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 60px;
+  }
+  .section-h2 {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.5rem;
+  }
+  .section-h2 .accent { color: var(--green); }
+
+  /* PROBLEM */
+  #problem {
+    background: var(--deep);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+  }
+  .problem-quote {
+    border-left: 2px solid var(--green);
+    padding-left: 2rem;
+  }
+  .problem-quote blockquote {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    line-height: 1.05;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+  .problem-quote blockquote .accent { color: var(--green); }
+  .problem-quote cite {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: block;
+    margin-top: 1.5rem;
+    letter-spacing: 0.12em;
+  }
+  .problem-facts { display: flex; flex-direction: column; gap: 1.5rem; }
+  .fact-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: border-color 0.2s;
+  }
+  .fact-row:hover { border-color: var(--green); }
+  .fact-num {
+    font-family: var(--display);
+    font-size: 2rem;
+    color: var(--green);
+    min-width: 80px;
+    line-height: 1;
+  }
+  .fact-text { font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+  .fact-text strong { color: var(--white); font-weight: 500; }
+
+  /* SOLUTION */
+  #solution { background: var(--black); }
+  .solution-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin-top: 3rem;
+    border: 1px solid var(--border);
+  }
+  .sol-card {
+    padding: 2.5rem 2rem;
+    background: var(--surface);
+    border: 1px solid transparent;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .sol-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+    transform-origin: left;
+  }
+  .sol-card:hover::before { transform: scaleX(1); }
+  .sol-card:hover { background: var(--deep); border-color: var(--border); }
+  .sol-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+    display: block;
+  }
+  .sol-num {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--green);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.75rem;
+  }
+  .sol-title {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.75rem;
+  }
+  .sol-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+  /* HOW IT WORKS */
+  #how {
+    background: var(--deep);
+    overflow: hidden;
+  }
+  .how-wrap {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 5rem;
+    align-items: start;
+    margin-top: 3rem;
+  }
+  .how-sticky { position: sticky; top: 120px; }
+  .how-steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 1.5rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    padding-top: 0.2rem;
+  }
+  .step-content h3 {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5rem;
+  }
+  .step-content p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+  .step-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    color: #1c1609;
+    background: var(--btn-green);
+    padding: 0.2rem 0.6rem;
+    margin-top: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  /* BUSINESS MODEL */
+  #business {
+    background: var(--black);
+  }
+  .biz-intro {
+    max-width: 600px;
+    font-size: 1.05rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 3.5rem;
+  }
+  .revenue-streams {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .rev-card {
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+    transition: all 0.25s;
+    background: var(--surface);
+  }
+  .rev-card:hover {
+    border-color: var(--green);
+    background: var(--deep);
+    box-shadow: 0 0 40px var(--green-glow);
+  }
+  .rev-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .rev-title {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.75rem;
+  }
+  .rev-price {
+    font-family: var(--display);
+    font-size: 2.5rem;
+    color: var(--green);
+    letter-spacing: 0.04em;
+    margin: 1rem 0;
+  }
+  .rev-price sub { font-family: var(--mono); font-size: 0.9rem; color: var(--muted); }
+  .rev-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  .moat-section { margin-top: 3rem; }
+  .moat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  .moat-item {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .moat-icon { color: var(--green); font-size: 1.1rem; min-width: 24px; }
+  .moat-text h4 { font-weight: 500; font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .moat-text p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* TRACTION / VISION */
+  #vision { background: var(--deep); overflow: hidden; }
+  .vision-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+  .vision-text .section-h2 { margin-bottom: 1.5rem; }
+  .vision-text p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+  .vision-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    border: 1px solid var(--border);
+  }
+  .metric {
+    padding: 2rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+  .metric:hover { background: var(--deep); border-color: var(--border); }
+  .metric-val {
+    font-family: var(--display);
+    font-size: 3rem;
+    color: var(--green);
+    display: block;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    display: block;
+  }
+  .roadmap {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .roadmap-item {
+    display: flex;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  .road-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 20px;
+  }
+  .road-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--green);
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+  }
+  .road-dot.future {
+    background: transparent;
+    border-color: var(--muted);
+  }
+  .road-connector {
+    flex: 1;
+    width: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+  .road-content {
+    padding-bottom: 1.75rem;
+    flex: 1;
+  }
+  .road-phase {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  .road-phase.future { color: var(--muted); }
+  .road-title { font-weight: 500; font-size: 0.9rem; }
+  .road-desc { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
+
+  /* TEAM / FOUNDING */
+  #team { background: var(--black); }
+  .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; margin-top: 3rem; }
+  .founder-card {
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    background: var(--surface);
+    position: relative;
+  }
+  .founder-card::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 2rem; right: 2rem;
+    height: 2px;
+    background: var(--green);
+  }
+  .founder-name {
+    font-family: var(--display);
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+  }
+  .founder-role {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+  .founder-bio { font-size: 0.9rem; color: var(--muted); line-height: 1.7; }
+  .founder-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.65rem;
+    text-transform: uppercase;
+  }
+  .why-now {
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    background: var(--deep);
+  }
+  .why-now h3 {
+    font-family: var(--display);
+    font-size: 1.8rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 1.5rem;
+    color: var(--green);
+  }
+  .why-now ul { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+  .why-now li {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .why-now li:last-child { border-bottom: none; padding-bottom: 0; }
+  .why-now li::before {
+    content: '✦';
+    color: var(--green);
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    margin-top: 0.2rem;
+  }
+
+  /* CTA */
+  #cta {
+    background: var(--black);
+    text-align: center;
+    padding: 7rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  #cta::before {
+    content: 'RELAY';
+    position: absolute;
+    font-family: var(--display);
+    font-size: 20vw;
+    color: var(--green-faint);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .cta-inner { position: relative; z-index: 2; max-width: 700px; margin: 0 auto; }
+  .cta-tag {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.25em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .cta-h2 {
+    font-family: var(--display);
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.5rem;
+  }
+  .cta-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+  }
+  .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .cta-email {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 2rem;
+    text-transform: uppercase;
+  }
+  .cta-email a { color: var(--green); text-decoration: none; }
+  .cta-email a:hover { text-decoration: underline; }
+
+  /* FOOTER */
+  footer {
+    background: var(--deep);
+    border-top: 1px solid var(--border);
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: var(--display);
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .footer-logo span { color: var(--green); }
+  .footer-note {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+  .footer-links a {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--green); }
+
+  /* ANIMATIONS */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-in.visible { opacity: 1; transform: none; }
+  .fade-in:nth-child(1) { transition-delay: 0s; }
+  .fade-in:nth-child(2) { transition-delay: 0.1s; }
+  .fade-in:nth-child(3) { transition-delay: 0.2s; }
+  .fade-in:nth-child(4) { transition-delay: 0.3s; }
+  .fade-in:nth-child(5) { transition-delay: 0.4s; }
+
+  /* TERMINAL BLINK */
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  .blink { animation: blink 1.2s step-end infinite; }
+
+  /* GLOW PULSE */
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px var(--green-glow); }
+    50% { box-shadow: 0 0 50px var(--green-glow), 0 0 80px var(--green-glow); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    #hero { grid-template-columns: 1fr; }
+    .hero-right { height: 300px; }
+    #problem { grid-template-columns: 1fr; gap: 2.5rem; }
+    .solution-grid { grid-template-columns: 1fr; }
+    .revenue-streams { grid-template-columns: 1fr; }
+    .moat-grid { grid-template-columns: 1fr; }
+    .how-wrap { grid-template-columns: 1fr; }
+    .vision-inner { grid-template-columns: 1fr; }
+    .team-grid { grid-template-columns: 1fr; }
+    section { padding: 4rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">RELAY<span>OS</span></div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#business">Model</a></li>
+    <li><a href="#vision">Vision</a></li>
+    <li><a href="#team">Team</a></li>
+  </ul>
+  <a href="#cta" class="nav-cta">Get in Touch</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Seed Round — Bangalore & Mumbai</div>
+    <h1 class="hero-h1">THE <span class="accent">COLD</span><br>GRID FOR<br>INDIA<span class="accent">.</span></h1>
+    <p class="hero-sub">RelayOS turns restaurant food surplus into an automated compliance workflow — cutting paperwork, unlocking tax benefits, and building the data foundation for a physical cold storage network that only goes where the numbers prove it should.</p>
+    <div class="hero-btns">
+      <a href="#solution" class="btn-primary">See How It Works</a>
+      <a href="#cta" class="btn-ghost">Talk to Founders</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="num">40%</span>
+        <span class="label">Food Loss<br>Post-Harvest</span>
+      </div>
+      <div class="stat-item">
+        <span class="num">₹92K<br><small style="font-size:1.2rem">Cr</small></span>
+        <span class="label">Annual Waste<br>Value India</span>
+      </div>
+      <div class="stat-item">
+        <span class="num">0<span class="blink" style="color:var(--green)">_</span></span>
+        <span class="label">Current Auditable<br>Platforms</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <img src="./hero.png" alt="RelayNode smart cold storage in urban India" />
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-inner">
+    <span>Section 80G Compliance Automation</span>
+    <span>IoT-Enabled Cold Storage Nodes</span>
+    <span>ESG Reporting for Restaurant Chains</span>
+    <span>Food Safety Insurance Wedge</span>
+    <span>POS Integration — Zero Manual Entry</span>
+    <span>Surplus Forecasting Engine</span>
+    <span>Bangalore &amp; Mumbai Launch</span>
+    <span>Section 80G Compliance Automation</span>
+    <span>IoT-Enabled Cold Storage Nodes</span>
+    <span>ESG Reporting for Restaurant Chains</span>
+    <span>Food Safety Insurance Wedge</span>
+    <span>POS Integration — Zero Manual Entry</span>
+    <span>Surplus Forecasting Engine</span>
+    <span>Bangalore &amp; Mumbai Launch</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="problem-quote fade-in">
+    <div class="section-label">The Problem</div>
+    <blockquote>
+      "In Bangalore and Mumbai,<br>5 kilometres is a <span class="accent">2-hour journey.</span><br><br>India's Tier-1 cities don't have a food shortage.<br>They have a <span class="accent">latency problem.</span>"
+    </blockquote>
+    <cite>— Roshan, Founder · Ex-Fractal Analytics · ISB PGP</cite>
+  </div>
+  <div class="problem-facts fade-in">
+    <div class="fact-row">
+      <span class="fact-num">2H</span>
+      <p class="fact-text"><strong>The window is 2 hours.</strong> A surplus meal from a corporate event crosses from nutritious to hazardous not from negligence — but because cities were never designed for last-mile food logistics.</p>
+    </div>
+    <div class="fact-row">
+      <span class="fact-num">40%</span>
+      <p class="fact-text"><strong>40% of India's food is lost</strong> between production and consumption. Most restaurant surplus never reaches those who need it — not from lack of intent, but from documentation burden.</p>
+    </div>
+    <div class="fact-row">
+      <span class="fact-num">0</span>
+      <p class="fact-text"><strong>Zero platforms today</strong> automate the Section 80G compliance chain for food donations. Kitchen managers track quantities on paper, if at all.</p>
+    </div>
+    <div class="fact-row">
+      <span class="fact-num">₹0</span>
+      <p class="fact-text"><strong>Most ESG disclosures are unverifiable.</strong> Corporates and restaurant chains want sustainability stories — but have no auditable data layer to back them up.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution">
+  <div class="section-label fade-in">The Solution</div>
+  <h2 class="section-h2 fade-in">COMPLIANCE<br>AS A <span class="accent">SERVICE</span></h2>
+  <p style="max-width:600px;color:var(--muted);line-height:1.7;margin-top:0.5rem;" class="fade-in">We replaced a long, fragile supply chain with a short, resilient one. RelayOS starts with software and earns its way into hardware — only where the data justifies it.</p>
+  <div class="solution-grid fade-in">
+    <div class="sol-card">
+      <span class="sol-num">01 / SAAS CORE</span>
+      <div class="sol-title">Plug Into Your POS</div>
+      <p class="sol-desc">RelayOS connects to a restaurant's existing POS system. Every meal flagged as surplus is automatically logged, timestamped, and queued for compliance documentation — zero manual entry for kitchen staff.</p>
+      <span class="sol-icon">⚙️</span>
+    </div>
+    <div class="sol-card">
+      <span class="sol-num">02 / COMPLIANCE ENGINE</span>
+      <div class="sol-title">Automate 80G & ESG</div>
+      <p class="sol-desc">The platform auto-generates Section 80G tax exemption certificates, monthly ESG impact reports, and surplus forecasts. Restaurants get a real, auditable paper trail that cuts their tax liability and feeds their sustainability disclosures.</p>
+      <span class="sol-icon">📋</span>
+    </div>
+    <div class="sol-card">
+      <span class="sol-num">03 / HARDWARE LAYER</span>
+      <div class="sol-title">Deploy Where Data Proves It</div>
+      <p class="sol-desc">Once data density justifies it, RelayOS deploys IoT-enabled cold storage micro-hubs at proven high-surplus intersections. Hardware is not the entry point — it's the reward for data density, funded by SaaS revenue already collected.</p>
+      <span class="sol-icon">🧊</span>
+    </div>
+    <div class="sol-card">
+      <span class="sol-num">04 / INSURANCE WEDGE</span>
+      <div class="sol-title">Legally Defensible Safety</div>
+      <p class="sol-desc">IoT sensors serve as underwriting inputs to a certified safe handoff insurance product. The safety layer is legally defensible, commercially monetisable, and very hard for a competitor to replicate quickly.</p>
+      <span class="sol-icon">🛡️</span>
+    </div>
+    <div class="sol-card">
+      <span class="sol-num">05 / DEMAND ANCHOR</span>
+      <div class="sol-title">Corporate CSR Integration</div>
+      <p class="sol-desc">Corporate campuses with CSR budgets receive documented proof that their food consumption is linked to surplus redistribution. The demand-side anchor pre-sells the supply-side network before hardware is deployed.</p>
+      <span class="sol-icon">🏢</span>
+    </div>
+    <div class="sol-card">
+      <span class="sol-num">06 / LAST MILE</span>
+      <div class="sol-title">500m, Not 5km</div>
+      <p class="sol-desc">Verified, safe food moves the final 500 metres via gig workers and e-bikes — not trucks racing across gridlocked cities. Donors get frictionless drop-off. NGOs get predictable, verified supply.</p>
+      <span class="sol-icon">🚲</span>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-label fade-in">Process Flow</div>
+  <h2 class="section-h2 fade-in">HOW IT<br><span class="accent">WORKS</span></h2>
+  <div class="how-wrap">
+    <div class="how-sticky fade-in">
+      <p style="color:var(--muted);font-size:0.9rem;line-height:1.7;margin-bottom:2rem;">The architecture flips the script. Instead of building infrastructure and hoping demand follows — RelayOS captures demand with software, then uses aggregated data to justify every piece of hardware it deploys.</p>
+      <div style="border:1px solid var(--border);padding:1.5rem;background:var(--surface);">
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1rem;">System Architecture</div>
+        <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);line-height:2;">
+          POS Data → RelayOS Engine<br>
+          <span style="color:var(--green)">↓</span> Compliance Docs<br>
+          <span style="color:var(--green)">↓</span> Surplus Forecast<br>
+          <span style="color:var(--green)">↓</span> Node Identification<br>
+          <span style="color:var(--green)">↓</span> Cold Hub Deployment<br>
+          <span style="color:var(--green)">↓</span> Insured Handoff<br>
+          <span style="color:var(--green)">↓</span> Last-Mile Delivery
+        </div>
+      </div>
+    </div>
+    <div class="how-steps fade-in">
+      <div class="step">
+        <span class="step-num">STEP 01</span>
+        <div class="step-content">
+          <h3>Restaurant Onboards</h3>
+          <p>A restaurant chain or cloud kitchen signs up for a monthly SaaS subscription. RelayOS integrates with their POS system in under 48 hours — no custom development required.</p>
+          <span class="step-tag">SaaS Subscription</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">STEP 02</span>
+        <div class="step-content">
+          <h3>Surplus Logged Automatically</h3>
+          <p>At end-of-service, surplus meals are auto-flagged. Quantities, timestamps, and food safety metadata are recorded without any manual entry from kitchen staff.</p>
+          <span class="step-tag">POS Integration</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">STEP 03</span>
+        <div class="step-content">
+          <h3>Compliance Docs Generated</h3>
+          <p>Section 80G certificates, ESG reports, and hygiene handoff records are auto-generated monthly. The restaurant's accountant receives a clean, audit-ready package.</p>
+          <span class="step-tag">Compliance Automation</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">STEP 04</span>
+        <div class="step-content">
+          <h3>Data Density Mapped</h3>
+          <p>Across all partner restaurants, RelayOS maps surplus density by neighbourhood and time window — identifying where physical infrastructure would have the highest utilisation rate.</p>
+          <span class="step-tag">Surplus Intelligence</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">STEP 05</span>
+        <div class="step-content">
+          <h3>Cold Hub Deployed</h3>
+          <p>Only when the data justifies it, an IoT-enabled cold storage unit goes in at the proven node. The hardware is funded by SaaS revenue already in the bank — capital-efficient by design.</p>
+          <span class="step-tag">Hardware · IoT</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">STEP 06</span>
+        <div class="step-content">
+          <h3>Insured, Last-Mile Delivery</h3>
+          <p>An insurance-backed certified handoff protocol clears food from the hub. Gig workers complete the final 500m. NGOs receive predictable, verified, legally documented supply.</p>
+          <span class="step-tag">Insurance · Last Mile</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BUSINESS MODEL -->
+<section id="business">
+  <div class="section-label fade-in">Business Model</div>
+  <h2 class="section-h2 fade-in">WHO PAYS<br>AND <span class="accent">WHY</span></h2>
+  <p class="biz-intro fade-in">The primary paying customer is the restaurant group or cloud kitchen chain — they receive immediate, measurable ROI in saved staff hours and tax benefits. Every other stakeholder benefits without being the economic foundation.</p>
+  <div class="revenue-streams fade-in">
+    <div class="rev-card">
+      <div class="rev-label">Primary Revenue</div>
+      <div class="rev-title">Restaurant SaaS</div>
+      <div class="rev-price">₹4–12K<sub>/mo</sub></div>
+      <p class="rev-desc">Monthly subscription for compliance automation, 80G certificate generation, ESG reporting, and surplus forecasting. Immediate ROI: saved staff hours + tax liability reduction.</p>
+    </div>
+    <div class="rev-card">
+      <div class="rev-label">Demand Anchor</div>
+      <div class="rev-title">Corporate CSR License</div>
+      <div class="rev-price">₹50K<sub>/yr</sub></div>
+      <p class="rev-desc">Corporate campuses with CSR mandates pay for documented, auditable proof linking their food consumption to verified surplus redistribution. Pre-sells the demand side of the network.</p>
+    </div>
+    <div class="rev-card">
+      <div class="rev-label">Hardware + Insurance</div>
+      <div class="rev-title">Cold Hub Network</div>
+      <div class="rev-price">₹2–5L<sub>/node</sub></div>
+      <p class="rev-desc">Hardware deployment fee for proven nodes, plus an ongoing insurance premium share from the certified safe handoff product. Deployed only where data justifies economics.</p>
+    </div>
+  </div>
+  <div class="moat-section fade-in">
+    <div class="section-label">Competitive Moat</div>
+    <div class="moat-grid">
+      <div class="moat-item">
+        <span class="moat-icon">🔗</span>
+        <div class="moat-text">
+          <h4>Data Network Effects</h4>
+          <p>More restaurant data → better surplus forecasts → more justified node deployments → stronger compliance value for each restaurant. The loop self-reinforces.</p>
+        </div>
+      </div>
+      <div class="moat-item">
+        <span class="moat-icon">🛡️</span>
+        <div class="moat-text">
+          <h4>Insurance Partnership</h4>
+          <p>An insurer-backed certified handoff product takes 12–18 months to replicate. It's not just a feature — it's a regulatory and actuarial moat.</p>
+        </div>
+      </div>
+      <div class="moat-item">
+        <span class="moat-icon">📄</span>
+        <div class="moat-text">
+          <h4>Compliance Switching Cost</h4>
+          <p>Once a restaurant's entire 80G and ESG audit trail lives in RelayOS, migrating to a competitor means rebuilding 12 months of compliance history from scratch.</p>
+        </div>
+      </div>
+      <div class="moat-item">
+        <span class="moat-icon">📍</span>
+        <div class="moat-text">
+          <h4>Physical Node Exclusivity</h4>
+          <p>Cold hubs in high-density neighbourhoods create geographic lock-in. The first mover with hardware at a proven node blocks competitors from that location permanently.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISION / TRACTION -->
+<section id="vision">
+  <div class="vision-inner">
+    <div class="vision-text fade-in">
+      <div class="section-label">Roadmap</div>
+      <h2 class="section-h2">BUILDING THE<br><span class="accent">COLD GRID</span></h2>
+      <p>We're building from data to hardware — not the other way around. Every milestone is funded by the previous one, designed so that the risk of infrastructure spend is never taken before the market has proven it.</p>
+      <div class="roadmap">
+        <div class="roadmap-item">
+          <div class="road-line">
+            <div class="road-dot"></div>
+            <div class="road-connector"></div>
+          </div>
+          <div class="road-content">
+            <div class="road-phase">Phase 1 · Now</div>
+            <div class="road-title">Software-Led Entry</div>
+            <div class="road-desc">Sign 20 restaurant chains / cloud kitchens in Bangalore on SaaS. Prove Section 80G compliance automation drives measurable ROI.</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="road-line">
+            <div class="road-dot"></div>
+            <div class="road-connector"></div>
+          </div>
+          <div class="road-content">
+            <div class="road-phase">Phase 2 · Year 1</div>
+            <div class="road-title">Data Density Mapping</div>
+            <div class="road-desc">Aggregate surplus data across 50+ partners. Identify 3–5 high-density nodes in Bangalore. Lock in corporate CSR contracts for demand side.</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="road-line">
+            <div class="road-dot future"></div>
+            <div class="road-connector"></div>
+          </div>
+          <div class="road-content">
+            <div class="road-phase future">Phase 3 · Year 2</div>
+            <div class="road-title">First Cold Hub Deployment</div>
+            <div class="road-desc">Deploy 5 IoT-enabled cold hubs in Bangalore's proven nodes. Launch insurance-backed certified handoff product with insurer partner.</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="road-line">
+            <div class="road-dot future"></div>
+            <div class="road-connector"></div>
+          </div>
+          <div class="road-content">
+            <div class="road-phase future">Phase 4 · Year 3</div>
+            <div class="road-title">Mumbai Expansion</div>
+            <div class="road-desc">Replicate the Bangalore playbook in Mumbai. 100+ restaurant SaaS subscribers. 20+ cold hub nodes. Target Series A for national cold grid rollout.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="fade-in">
+      <div class="vision-metrics">
+        <div class="metric">
+          <span class="metric-val">₹92K</span>
+          <span class="metric-label">Crore annual<br>food waste (India)</span>
+        </div>
+        <div class="metric">
+          <span class="metric-val">8M+</span>
+          <span class="metric-label">Restaurants in<br>India (TAM)</span>
+        </div>
+        <div class="metric">
+          <span class="metric-val">80G</span>
+          <span class="metric-label">Tax Exemption<br>Unlocked Per Client</span>
+        </div>
+        <div class="metric">
+          <span class="metric-val">0</span>
+          <span class="metric-label">Direct Competitors<br>with Compliance SaaS</span>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);padding:2rem;margin-top:1.5rem;background:var(--surface);">
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--green);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:1.25rem;">The One-Line Version</div>
+        <p style="font-family:var(--display);font-size:1.6rem;line-height:1.15;letter-spacing:0.03em;color:var(--white);">RelayOS turns a restaurant's daily food surplus into an automated compliance workflow — cutting paperwork, unlocking tax benefits, and building the data foundation for a physical cold storage network that only goes where the <span style="color:var(--green)">numbers prove it should.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="section-label fade-in">Founders</div>
+  <h2 class="section-h2 fade-in">THE PEOPLE<br>BEHIND <span class="accent">RELAYOS</span></h2>
+  <div class="team-grid">
+    <div class="founder-card fade-in">
+      <div class="founder-name">Roshan</div>
+      <div class="founder-role">Founder & CEO</div>
+      <p class="founder-bio">My career started at Fractal Analytics, optimizing the flow of data through broken pipelines. At ISB, I had a different realization: the most broken pipeline in this country isn't in any server. It's on our streets — between the restaurant that has 200 extra meals at 9pm and the shelter 4 kilometres away, stuck behind the same traffic.
+      <br><br>We keep trying to solve that problem with more vehicles. RelayOS changes the architecture instead.</p>
+      <div class="founder-tags">
+        <span class="tag">Fractal Analytics</span>
+        <span class="tag">ISB PGP</span>
+        <span class="tag">Data Pipelines</span>
+        <span class="tag">Urban Logistics</span>
+        <span class="tag">Product Strategy</span>
+      </div>
+    </div>
+    <div class="why-now fade-in">
+      <h3>WHY NOW?</h3>
+      <ul>
+        <li>India's new ESG reporting mandates for listed companies (BRSR) have created an urgent compliance market that didn't exist 2 years ago — and no one is serving it for food chains.</li>
+        <li>Section 80G reforms have made food donation tax benefits significantly more accessible, but documentation requirements have simultaneously increased — creating the exact compliance gap RelayOS fills.</li>
+        <li>IoT sensor costs have dropped 70% in 5 years, making cold hub hardware economics viable at restaurant-cluster scale for the first time.</li>
+        <li>India's cloud kitchen market is growing at 12% CAGR. These are digital-native businesses with no legacy POS friction — they are the perfect beachhead for SaaS adoption.</li>
+        <li>Zomato and Swiggy have normalized data-driven restaurant operations. Restaurant chains are finally ready to be sold on data-as-an-asset — not just order management.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-inner fade-in">
+    <div class="cta-tag">// Seed Round Open</div>
+    <h2 class="cta-h2">LET'S BUILD<br>THE <span style="color:var(--green)">COLD<br>GRID.</span></h2>
+    <p class="cta-sub">We're looking for restaurant chains, event companies, ESG-aligned corporates, and investors who want to be part of the founding network in Bangalore and Mumbai.<br>If that's you — the inbox is open.</p>
+    <div class="cta-btns">
+      <a href="mailto:hello@relayos.in" class="btn-primary">Contact Founder</a>
+      <a href="#solution" class="btn-ghost">Read the Deck ↗</a>
+    </div>
+    <p class="cta-email">Or reach directly: <a href="mailto:hello@relayos.in">hello@relayos.in</a></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">RELAY<span>OS</span></div>
+  <span class="footer-note">© 2025 RelayOS · Bangalore · Mumbai · Built for India's Circular Cities</span>
+  <ul class="footer-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#business">Model</a></li>
+    <li><a href="#cta">Contact</a></li>
+  </ul>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx - 4 + 'px';
+    cursor.style.top = my - 4 + 'px';
+  });
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx - 16 + 'px';
+    ring.style.top = ry - 16 + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2.5)'; ring.style.transform = 'scale(1.5)'; ring.style.opacity = '0.25'; });
+    el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; ring.style.transform = 'scale(1)'; ring.style.opacity = '0.5'; });
+  });
+
+  // Scroll fade-in
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+  // Nav scroll shrink
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 60) {
+      nav.style.padding = '0.75rem 3rem';
+      nav.style.borderBottomColor = 'rgba(0,230,118,0.15)';
+    } else {
+      nav.style.padding = '1.25rem 3rem';
+      nav.style.borderBottomColor = 'rgba(0,230,118,0.08)';
+    }
+  });
+
+  // Counter animation for stats
+  function animateCounter(el, target, suffix = '') {
+    let current = 0;
+    const step = target / 60;
+    const update = () => {
+      current = Math.min(current + step, target);
+      el.textContent = Math.floor(current) + suffix;
+      if (current < target) requestAnimationFrame(update);
+    };
+    update();
+  }
+
+  // Green glow on metric hover
+  document.querySelectorAll('.metric').forEach(m => {
+    m.addEventListener('mouseenter', () => m.style.boxShadow = '0 0 40px rgba(0,230,118,0.1)');
+    m.addEventListener('mouseleave', () => m.style.boxShadow = '');
+  });
+</script>
+</body>
+</html>
